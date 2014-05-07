@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 require 'guard/plugin'
+require 'guard/guard'
 
 describe Guard::PluginUtil do
 
