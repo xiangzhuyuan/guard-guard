@@ -115,7 +115,7 @@ describe Guard::Commander do
     context 'with a given scope' do
       it 'does not re-evaluate the Guardfile' do
         expect_any_instance_of(::Guard::Guardfile::Evaluator)
-          .to_not receive(:reevaluate_guardfile)
+          .to_not receive(:reevaluate)
 
         subject.reload({ groups: [group] })
       end
@@ -130,7 +130,7 @@ describe Guard::Commander do
     context 'with an empty scope' do
       it 'does re-evaluate the Guardfile' do
         expect_any_instance_of(::Guard::Guardfile::Evaluator)
-          .to receive(:reevaluate_guardfile)
+          .to receive(:reevaluate)
 
         subject.reload
       end

@@ -302,43 +302,22 @@ describe Guard::Watcher do
         specify { expect(subject.match('lib/my_wonderful_lib.rb')).to be_nil }
       end
     end
-
-    context "path start with a !" do
-      context "with a string pattern" do
-        subject { described_class.new('guard_rocks_spec.rb') }
-
-        context "with a watcher that matches a file" do
-          specify { expect(subject.match('!guard_rocks_spec.rb')).to eq ['!guard_rocks_spec.rb'] }
-        end
-
-        context "with no watcher that matches a file" do
-          specify { expect(subject.match('!lib/my_wonderful_lib.rb')).to be_nil }
-        end
-      end
-
-      context "with a regexp pattern" do
-        subject { described_class.new(/(.*)_spec\.rb/) }
-
-        context "with a watcher that matches a file" do
-          specify { expect(subject.match('!guard_rocks_spec.rb')).to eq ['!guard_rocks_spec.rb', 'guard_rocks'] }
-        end
-
-        context "with no watcher that matches a file" do
-          specify { expect(subject.match('!lib/my_wonderful_lib.rb')).to be_nil }
-        end
-      end
-    end
   end
 
   describe '.match_guardfile?' do
-    before { allow(Guard).to receive(:evaluator) { double(guardfile_path: File.expand_path('Guardfile')) } }
 
     context "with files that match the Guardfile" do
-      specify { expect(described_class.match_guardfile?(['Guardfile', 'guard_rocks_spec.rb'])).to be_truthy }
+      specify {
+        allow(Guard).to receive(:evaluator) { double(source?: true) }
+        expect(described_class.match_guardfile?(['Guardfile', 'guard_rocks_spec.rb'])).to be_truthy
+      }
     end
 
     context "with no files that match the Guardfile" do
-      specify { expect(described_class.match_guardfile?(['guard_rocks.rb', 'guard_rocks_spec.rb'])).to be_falsey }
+      specify {
+        allow(Guard).to receive(:evaluator) { double(source?: false) }
+        expect(described_class.match_guardfile?(['guard_rocks.rb', 'guard_rocks_spec.rb'])).to be_falsey
+      }
     end
   end
 

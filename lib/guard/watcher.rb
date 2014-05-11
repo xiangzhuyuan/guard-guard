@@ -59,7 +59,7 @@ module Guard
                 paths << Array(result)
               end
             else
-              paths << matches[0]
+              paths << matches.first
             end
           end
         end
@@ -89,7 +89,7 @@ module Guard
     # @return [Boolean] whether one of these files is the Guardfile
     #
     def self.match_guardfile?(files)
-      files.any? { |file| File.expand_path(file) == ::Guard.evaluator.guardfile_path }
+      files.any? { |file| ::Guard.evaluator.source?(file) }
     end
 
     # Test the watchers pattern against a file.
@@ -99,17 +99,14 @@ module Guard
     #   if the pattern is a string)
     #
     def match(file)
-      f = file
-      deleted = file.start_with?('!')
-      f = deleted ? f[1..-1] : f
       if @pattern.is_a?(Regexp)
-        if m = f.match(@pattern)
+        if (m = file.to_s.match(@pattern))
           m = m.to_a
           m[0] = file
           m
         end
       else
-        f == @pattern ? [file] : nil
+        file.to_s == @pattern ? [file] : nil
       end
     end
 

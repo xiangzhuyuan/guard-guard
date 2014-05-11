@@ -41,6 +41,12 @@ RSpec.configure do |config|
 
     ::Guard.reset_groups
     ::Guard.reset_plugins
+
+    interactor = Guard.instance_variable_get('@interactor')
+    if interactor
+      interactor.stop
+      Guard.remove_instance_variable('@interactor')
+    end
   end
 
   config.before(:suite) do
@@ -59,6 +65,13 @@ RSpec.configure do |config|
   end
 
   config.after(:each) do
+    interactor = Guard.instance_variable_get('@interactor')
+    if interactor
+      interactor.stop
+      sleep 1
+      Guard.remove_instance_variable('@interactor')
+    end
+
     Pry.config.hooks.delete_hook(:when_started, :load_guard_rc)
     Pry.config.hooks.delete_hook(:when_started, :load_project_guard_rc)
 

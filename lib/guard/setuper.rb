@@ -1,6 +1,6 @@
 require 'thread'
 require 'listen'
-require 'guard/options'
+require 'thor/core_ext/hash_with_indifferent_access'
 
 module Guard
 
@@ -40,17 +40,14 @@ module Guard
     # @return [Guard] the Guard singleton
     #
     def setup(opts = {})
-      _reset_lazy_accessors
+      hash_class = Thor::CoreExt::HashWithIndifferentAccess
+      @options = hash_class.new(DEFAULT_OPTIONS.merge(opts))
+
       @running   = true
       @lock      = Mutex.new
-      @opts      = opts
-      @watchdirs = [Dir.pwd]
       @runner    = ::Guard::Runner.new
 
-      if options[:watchdir]
-        # Ensure we have an array
-        @watchdirs = Array(options[:watchdir]).map { |dir| File.expand_path dir }
-      end
+      @watchdirs = _watchdirs
 
       ::Guard::UI.clear(force: true)
       _setup_debug if options[:debug]
@@ -61,7 +58,8 @@ module Guard
       reset_plugins
       reset_scope
 
-      evaluate_guardfile
+      @evaluator = ::Guard::Guardfile::Evaluator.new(opts)
+      evaluator.evaluate
 
       setup_scope(groups: options[:group], plugins: options[:plugin])
 
@@ -70,17 +68,7 @@ module Guard
       self
     end
 
-    # Lazy initializer for Guard's options hash
-    #
-    def options
-      @options ||= ::Guard::Options.new(@opts, DEFAULT_OPTIONS)
-    end
-
-    # Lazy initializer for Guardfile evaluator
-    #
-    def evaluator
-      @evaluator ||= ::Guard::Guardfile::Evaluator.new(@opts || {})
-    end
+    attr_reader :options, :evaluator
 
     # Lazy initializer the interactor unless the user has specified not to.
     #
@@ -139,23 +127,7 @@ module Guard
       end
     end
 
-    # Evaluates the Guardfile content. It displays an error message if no
-    # Guard plugins are instantiated after the Guardfile evaluation.
-    #
-    # @see Guard::Guardfile::Evaluator#evaluate_guardfile
-    #
-    def evaluate_guardfile
-      evaluator.evaluate_guardfile
-      ::Guard::UI.error 'No plugins found in Guardfile, please add at least one.' if plugins.empty?
-    end
-
     private
-
-    def _reset_lazy_accessors
-      @options    = nil
-      @evaluator  = nil
-      @interactor = nil
-    end
 
     # Sets up various debug behaviors:
     #
@@ -269,27 +241,29 @@ module Guard
       false
     end
 
-    def _relative_paths(changes)
-      # Convert to relative paths (respective to the watchdir it came from)
-      watchdirs.each do |watchdir|
-        changes.each do |type, paths|
-          paths.each do |path|
-            if path.start_with? watchdir
-              path.sub! "#{watchdir}#{File::SEPARATOR}", ''
-            end
+    def _relative_paths(files)
+      [].tap do |result|
+        # Convert to relative paths (respective to the watchdir it came from)
+        files.uniq.each do |file|
+          file = Pathname(file)
+
+          if file.relative?
+            raise "Not supported yet!"
+            result << file
+          else
+            result << _find_relative(file)
           end
+
         end
       end
     end
 
     def _listener_callback
       lambda do |modified, added, removed|
-        all_changes = { modified: modified.dup,
-                        added: added.dup,
-                        removed: removed.dup }
-
-        # TODO: this should be Listen's responsibility
-        _relative_paths(all_changes)
+        # TODO: Listen should provide relative paths
+        all_changes = { modified: _relative_paths(modified),
+                        added: _relative_paths(added),
+                        removed: _relative_paths(removed) }
 
         if _relevant_changes?(all_changes)
           within_preserved_state do
@@ -298,5 +272,24 @@ module Guard
         end
       end
     end
+
+    def _watchdirs
+      dirs = Array(options[:watchdir]).map {|dir| Pathname.new(dir) }
+      return [Pathname.pwd] if dirs.empty?
+      dirs.map(&:expand_path)
+    end
+
+    def _find_relative(path)
+      watchdirs.each do |watchdir|
+        begin
+          rel = path.relative_path_from(watchdir)
+          in_base = rel.to_s.split(Pathname::SEPARATOR_PAT).all? {|p| p != '..' }
+          return rel if in_base
+        rescue ArgumentError
+        end
+      end
+      raise "File not watched: #{file.to_s} within: #{watchdirs.inspect}"
+    end
+
   end
 end

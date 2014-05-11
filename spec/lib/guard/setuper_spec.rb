@@ -3,16 +3,19 @@ require 'guard/plugin'
 
 describe Guard::Setuper do
 
-  let(:guardfile_evaluator) { double('Guard::Guardfile::Evaluator instance') }
-
   before do
+    allow(IO).to receive(:read) { |file| raise "Stub called with: #{file}" }
     Guard.clear_options
-    allow(Guard::Interactor).to receive(:fabricate)
     allow(Dir).to receive(:chdir)
   end
 
   describe '.setup' do
-    let(:options) { { my_opts: true, guardfile: File.join(@fixture_path, "Guardfile") } }
+    let(:options) { { my_opts: true, guardfiles: File.join(@fixture_path, "Guardfile") } }
+
+    before do
+      allow_any_instance_of(Guard::Guardfile::Evaluator).to receive(:evaluate)
+    end
+
     subject { Guard.setup(options) }
 
     it "returns itself for chaining" do
@@ -60,14 +63,11 @@ describe Guard::Setuper do
       subject
     end
 
+    let(:evaluator) { double(Guard::Guardfile::Evaluator) }
+
     it 'evaluates the Guardfile' do
-      expect(Guard).to receive(:evaluate_guardfile)
-
-      subject
-    end
-
-    it 'displays an error message when no guard are defined in Guardfile' do
-      expect(Guard::UI).to receive(:error).with('No plugins found in Guardfile, please add at least one.')
+      expect(evaluator).to receive(:evaluate)
+      expect(Guard::Guardfile::Evaluator).to receive(:new) { evaluator }
 
       subject
     end
@@ -99,6 +99,14 @@ describe Guard::Setuper do
     end
 
     context 'with the plugin option' do
+      before do
+        allow_any_instance_of(Guard::Guardfile::Evaluator).to receive(:evaluate) do
+          ::Guard::Dsl.new.instance_eval(
+          "guard :jasmine do; end; guard :cucumber do; end; guard :coffeescript do; end",
+          'inline',1)
+        end
+
+      end
       let(:options) do
         {
           plugin:             ['cucumber', 'jasmine'],
@@ -121,7 +129,7 @@ describe Guard::Setuper do
     end
 
     context 'with the debug mode turned on' do
-      let(:options) { { debug: true, guardfile: File.join(@fixture_path, "Guardfile") } }
+      let(:options) { { debug: true, guardfiles: File.join(@fixture_path, "Guardfile") } }
       subject { ::Guard.setup(options) }
 
       before do
@@ -142,7 +150,11 @@ describe Guard::Setuper do
 
   describe '.reset_groups' do
     subject do
-      guard           = Guard.setup(guardfile: File.join(@fixture_path, "Guardfile"))
+      #TODO: remove fixtures
+      path = File.join(@fixture_path, "Guardfile")
+      content = "# nothing here, it's just for feeding the specs! :)"
+      allow(File).to receive(:read).with(path) { content }
+      guard           = Guard.setup(guardfiles: path)
       @group_backend  = guard.add_group(:backend)
       @group_backflip = guard.add_group(:backflip)
       guard
@@ -159,12 +171,13 @@ describe Guard::Setuper do
 
   describe '.reset_plugins' do
     before do
+      allow_any_instance_of(Guard::Guardfile::Evaluator).to receive(:evaluate)
       Guard.setup
       class Guard::FooBar < Guard::Plugin; end
     end
 
     subject do
-      ::Guard.setup(guardfile: File.join(@fixture_path, "Guardfile")).tap { |g| g.add_plugin(:foo_bar) }
+      ::Guard.setup(guardfiles: File.join(@fixture_path, "Guardfile")).tap { |g| g.add_plugin(:foo_bar) }
     end
     after do
       ::Guard.instance_eval { remove_const(:FooBar) }
@@ -179,18 +192,9 @@ describe Guard::Setuper do
     end
   end
 
-  describe '.evaluate_guardfile' do
-    it 'evaluates the Guardfile' do
-      allow(Guard).to receive(:evaluator) { guardfile_evaluator }
-      expect(guardfile_evaluator).to receive(:evaluate_guardfile)
-
-      Guard.evaluate_guardfile
-    end
-  end
-
   describe '._setup_signal_traps', speed: 'slow' do
     before do
-      allow(::Guard).to receive(:evaluate_guardfile)
+      allow_any_instance_of(Guard::Guardfile::Evaluator).to receive(:evaluate)
       ::Guard.setup
     end
 
@@ -265,6 +269,11 @@ describe Guard::Setuper do
   end
 
   describe '._setup_notifier' do
+
+    before do
+      allow_any_instance_of(Guard::Guardfile::Evaluator).to receive(:evaluate)
+    end
+
     context "with the notify option enabled" do
       context 'without the environment variable GUARD_NOTIFY set' do
         before { ENV["GUARD_NOTIFY"] = nil }
@@ -335,7 +344,7 @@ describe Guard::Setuper do
     before { Guard.instance_variable_set '@watchdirs', ['/home/user/test'] }
 
     context "with latency option" do
-      before { allow(::Guard).to receive(:options).and_return(Guard::Options.new(latency: 1.5)) }
+      before { allow(::Guard).to receive(:options).and_return(latency: 1.5) }
 
       it "pass option to listener" do
         expect(Listen).to receive(:to).with(anything, { latency: 1.5 }) { listener }
@@ -345,7 +354,7 @@ describe Guard::Setuper do
     end
 
     context "with force_polling option" do
-      before { allow(::Guard).to receive(:options).and_return(Guard::Options.new(force_polling: true)) }
+      before { allow(::Guard).to receive(:options).and_return(force_polling: true) }
 
       it "pass option to listener" do
         expect(Listen).to receive(:to).with(anything, { force_polling: true }) { listener }
@@ -357,7 +366,7 @@ describe Guard::Setuper do
 
   describe '._setup_notifier' do
     context "with the notify option enabled" do
-      before { allow(::Guard).to receive(:options).and_return(Guard::Options.new(notify: true)) }
+      before { allow(::Guard).to receive(:options).and_return(notify: true) }
 
       context 'without the environment variable GUARD_NOTIFY set' do
         before { ENV["GUARD_NOTIFY"] = nil }
@@ -379,7 +388,7 @@ describe Guard::Setuper do
     end
 
     context "with the notify option disabled" do
-      before { allow(::Guard).to receive(:options).and_return(Guard::Options.new(notify: false)) }
+      before { allow(::Guard).to receive(:options).and_return(notify: false) }
 
       context 'without the environment variable GUARD_NOTIFY set' do
         before { ENV["GUARD_NOTIFY"] = nil }
@@ -404,6 +413,7 @@ describe Guard::Setuper do
   describe '.interactor' do
     context 'with CLI options' do
       before do
+        allow_any_instance_of(Guard::Guardfile::Evaluator).to receive(:evaluate)
         @interactor_enabled       = Guard::Interactor.enabled
         Guard::Interactor.enabled = true
       end
@@ -423,8 +433,13 @@ describe Guard::Setuper do
     end
 
     context 'with DSL options' do
-      before { @interactor_enabled = Guard::Interactor.enabled }
+      before do
+
+        allow_any_instance_of(Guard::Guardfile::Evaluator).to receive(:evaluate)
+        @interactor_enabled = Guard::Interactor.enabled
+      end
       after { Guard::Interactor.enabled = @interactor_enabled }
+
 
       context "with interactions enabled" do
         before do
@@ -450,6 +465,7 @@ describe Guard::Setuper do
     subject { Guard.setup }
 
     before do
+      allow_any_instance_of(Guard::Guardfile::Evaluator).to receive(:evaluate)
       # Unstub global stub
       allow(Guard).to receive(:_debug_command_execution).and_call_original
 

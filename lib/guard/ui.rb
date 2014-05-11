@@ -1,6 +1,5 @@
 require 'lumberjack'
 
-require 'guard/options'
 require 'guard/ui/colors'
 
 module Guard
@@ -30,19 +29,10 @@ module Guard
       # @return [Hash] the logger options
       #
       def options
-        @options ||= ::Guard::Options.new(level: :info, template: ':time - :severity - :message', time_format: '%H:%M:%S')
+        @options ||= { level: :info, template: ':time - :severity - :message', time_format: '%H:%M:%S' }
       end
 
-      # Set the logger options
-      #
-      # @param [Hash] options the logger options
-      # @option options [Symbol] level the log level
-      # @option options [String] template the logger template
-      # @option options [String] time_format the time format
-      #
-      def options=(options)
-        @options = ::Guard::Options.new(options)
-      end
+      attr_writer :options
 
       # Show an info message.
       #

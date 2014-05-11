@@ -123,7 +123,7 @@ module Guard
     #   {Guard::Guardfile::Evaluator#evaluate_guardfile}.
     #
     def _evaluate_guardfile
-      ::Guard::Guardfile::Evaluator.new(options).evaluate_guardfile
+      ::Guard::Guardfile::Evaluator.new(options).evaluate
     end
 
   end

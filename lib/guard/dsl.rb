@@ -45,17 +45,6 @@ module Guard
   #
   class Dsl
 
-    # @deprecated Use
-    #   `Guard::Guardfile::Evaluator.new(options).evaluate_guardfile` instead.
-    #
-    # @see https://github.com/guard/guard/wiki/Upgrading-to-Guard-2.0 How to
-    #   upgrade for Guard 2.0
-    #
-    def self.evaluate_guardfile(options = {})
-      ::Guard::UI.deprecation(::Guard::Deprecator::EVALUATE_GUARDFILE_DEPRECATION)
-      ::Guard::Guardfile::Evaluator.new(options).evaluate_guardfile
-    end
-
     # Set notification options for the system notifications.
     # You can set multiple notifications, which allows you to show local
     # system notifications and remote notifications with separate libraries.
