@@ -1,83 +1,62 @@
 Guard
 =====
-
-[![Gem Version](https://badge.fury.io/rb/guard.png)](http://badge.fury.io/rb/guard) [![Build Status](https://travis-ci.org/guard/guard.png?branch=master)](https://travis-ci.org/guard/guard) [![Dependency Status](https://gemnasium.com/guard/guard.png)](https://gemnasium.com/guard/guard) [![Code Climate](https://codeclimate.com/github/guard/guard.png)](https://codeclimate.com/github/guard/guard) [![Coverage Status](https://coveralls.io/repos/guard/guard/badge.png?branch=master)](https://coveralls.io/r/guard/guard) [![Inline docs](http://inch-ci.org/github/guard/guard.png)](http://inch-ci.org/github/guard/guard)
-
-<img src="http://cl.ly/image/1k3o1r2Z3a0J/guard-Icon.png" alt="Guard Icon" align="right" />
-Guard is a command line tool to easily handle events on file system modifications.
-
-This document contains a lot of information, please take your time and read these instructions carefully. If you have
-any questions about the Guard usage or want to share some information with the Guard community, please go to one of
-the following places:
-
+Guard是一个命令行模式的比较的简单用来监视文件系统改动的工具.
+下面几个方式可以参与guard讨论:
 * [Google+ community](https://plus.google.com/u/1/communities/110022199336250745477)
 * [Google group](http://groups.google.com/group/guard-dev)
 * [StackOverflow](http://stackoverflow.com/questions/tagged/guard)
 * IRC channel `#guard` (irc.freenode.net) for chatting
 
-Information on advanced topics like creating your own Guard plugin, programatic use of Guard, hooks and callbacks and
-more can be found in the [Guard wiki](https://github.com/guard/guard/wiki).
+如果想寻求比较高阶的用法如果开发资金的插件,编码问题,等请到这里: [Guard wiki](https://github.com/guard/guard/wiki).
+在提问题之前,确保你已经阅读过了_[known issues](#issues)_ 和 _[file an issue](#file-an-issue)_ .
 
-Before you file an issue, make sure you have read the _[known issues](#issues)_ and _[file an issue](#file-an-issue)_ sections that contains some important information.
+#### 特色
 
-#### Features
+* 通过这个 [Listen](https://github.com/guard/listen) gem 很容易的监视文件改动.
+* 支持虚拟系统文件的改动监视.
+* 有大约[超过220](https://rubygems.org/search?query=guard-) 个Guard插件.
+* 支持 Ruby 1.9.3, 2.0.0, 2.1.0, JRuby & Rubinius.
 
-* File system changes handled by our awesome [Listen](https://github.com/guard/listen) gem.
-* Support for visual system notifications.
-* Huge eco-system with [more than 220](https://rubygems.org/search?query=guard-) Guard plugins.
-* Tested against Ruby 1.9.3, 2.0.0, 2.1.0, JRuby & Rubinius.
+#### 截图
 
-#### Screencast
-
-Two nice screencasts are available to help you get started:
-
+下面的资源可以让你轻松开始
 * [Guard](http://railscasts.com/episodes/264-guard) on RailsCast.
 * [Guard is Your Best Friend](http://net.tutsplus.com/tutorials/tools-and-tips/guard-is-your-best-friend) on Net Tuts+.
 
-Installation
+安装
 ------------
 
-The simplest way to install Guard is to use [Bundler](http://gembundler.com/).
+常见的方式就是通过[Bundler](http://gembundler.com/)来安装.
 
-Add Guard (and any other dependencies) to a `Gemfile` in your project’s root:
+在`Gemfile`里添加对于guard的依赖
 
 ```ruby
 group :development do
   gem 'guard'
 end
 ```
-
-then install it by running Bundler:
+执行`bundle install`
 
 ```bash
 $ bundle
 ```
-
-Generate an empty `Guardfile` with:
+通过一下命令来生成一个空的guard配置文件 `Guardfile`
 
 ```bash
 $ bundle exec guard init
 ```
-
-Run Guard through Bundler with:
+一般来说都会通过这个方式来执行gem的命令*在当前gem依赖的情况下*:
 
 ```bash
 $ bundle exec guard
 ```
 
-**It's important that you always run Guard through Bundler to avoid errors.** If you're getting sick of typing
-`bundle exec` all the time, try the [Rubygems Bundler](https://github.com/mpapis/rubygems-bundler).
+#### 添加guard常见
 
-If you are on Mac OS X and have problems with either Guard not reacting to file changes or Pry behaving strange, then
-you should [add proper Readline support to Ruby on Mac OS X](https://github.com/guard/guard/wiki/Add-Readline-support-to-Ruby-on-Mac-OS-X).
+此时你可以开始用guard了,可以通过很多不同的插件来完成不同的任务,
+通过浏览[Guard organization](https://github.com/guard) 或者直接去[RubyGems](https://rubygems.org/search?utf8=%E2%9C%93&query=guard-)库里搜索.
 
-#### Add Guard plugins
-
-Guard is now ready to use and you should add some Guard plugins for your specific use. Start exploring the many Guard
-plugins available by browsing the [Guard organization](https://github.com/guard) on GitHub or by searching for `guard-`
-on [RubyGems](https://rubygems.org/search?utf8=%E2%9C%93&query=guard-).
-
-When you have found a Guard plugin of your interest, add it to your `Gemfile`:
+当找到你喜欢的,添加到`Gemfile`里去
 
 ```ruby
 group :development do
@@ -85,54 +64,47 @@ group :development do
 end
 ```
 
-See the init section of the Guard usage below to see how to install the supplied plugin template that you can install and
-to suit your needs.
+看下面的教程来学习如果使用插件
 
-Usage
+用法
 -----
 
-Guard is run from the command line. Please open your terminal and go to your project work directory.
+打开终端,到当前工程目录
 
-### Help
+### 帮助
 
-You can always get help on the available tasks with the `help` task:
+通过下面的方式得到帮助
 
 ```bash
 $ bundle exec guard help
 ```
 
-Requesting more detailed help on a specific task is simple: just append the task name to the help task.
-For example, to get help for the `start` task, simply run:
+需要得到某个task的详细帮助直接在help后追加那个task名
 
 ```bash
 $ bundle exec guard help start
 ```
 
-### Init
+### 初始化
 
-You can generate a Guardfile and have all installed plugins be automatically added into
-it by running the `init` task without any option:
+在guard已经guard 插件都配置好之后,执行初始化命令就可以生成一个Guardfile,里面已经包含了所有的插件
 
 ```bash
 $ bundle exec guard init
 ```
 
-You can also specify the name of an installed plugin to only get that plugin template
-in the generated Guardfile:
+或者可以只生成某特定插件的模板
 
 ```bash
 $ bundle exec guard init <guard-name>
 ```
-
-You can also specify the names of multiple plugins to only get those plugin templates
-in the generated Guardfile:
+还可以一次多个
 
 ```bash
 $ bundle exec guard init <guard1-name> <guard2-name>
 ```
 
-You can also define your own templates in `~/.guard/templates/` which can be appended in the same way to your existing
-`Guardfile`:
+你可以在`~/.guard/templates/` 编辑自己的模板,然后通过命令追加到`Guardfile`:
 
 ```bash
 $ bundle exec guard init <template-name>
@@ -143,24 +115,22 @@ to append a supplied template from an installed plugin to your existing `Guardfi
 
 #### `-b`/`--bare` option
 
-You can generate an empty `Guardfile` by running the `init` task with the bare
-option:
+生成一个空的文件
 
 ```bash
 $ bundle exec guard init --bare
 $ bundle exec guard init -b # shortcut
 ```
 
-### Start
+### 开始
 
-Just launch Guard inside your Ruby or Rails project with:
+键入下面命令开始让guard工作
 
 ```bash
 $ bundle exec guard
 ```
 
-Guard will look for a `Guardfile` in your current directory. If it does not find one, it will look in your `$HOME`
-directory for a `.Guardfile`.
+Guard默认会去当前命令下找 `Guardfile`,但是如果没有的话就去当前用户根目录下找`.Guardfile`.
 
 #### `-c`/`--clear` option
 
