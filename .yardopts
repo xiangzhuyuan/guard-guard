@@ -1,9 +1,0 @@
---title 'Guard Documentation'
---readme README.md
---markup markdown
---markup-provider redcarpet
---output-dir ./doc
-lib/**/*.rb
--
-CHANGELOG.md
-LICENSE
